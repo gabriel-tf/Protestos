@@ -1,0 +1,17 @@
+
+W = display.contentWidth  -- Pega a largura da tela
+H = display.contentHeight -- Pega a altura da tela
+
+-- Imagens
+local bg = display.newImage('rua_1.png')
+
+local barraIngame = display.newImage('barra_ingame.png', 0, 370)
+
+local setaLeft = display.newImage('seta_left.png', 15, 400)
+local setaRight = display.newImage('seta_right.png', 65, 400)
+local setaDown = display.newImage('seta_down.png', 250, 430)
+local setaUp = display.newImage('seta_up.png', 250, 385)
+
+local startInggame = display.newImage('start_ingame.png', 123, 440)
+
+local jogadorBack = display.newImage('jogador_back_stop.png', 140, 320)

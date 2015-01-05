@@ -1,0 +1,337 @@
+W = display.contentWidth  -- Pega a largura da tela
+H = display.contentHeight -- Pega a altura da tela
+
+display.setStatusBar(display.HiddenStatusBar)
+
+-- Física
+
+local physics = require('physics')
+physics.start()
+physics.setGravity(0, 0)
+--physics.setDrawMode('hybrid')
+
+-- Graficos
+
+-- Background
+
+local bg = display.newImage('bg.png')
+
+-- Menu
+
+local title
+local playBtn
+local creditsBtn
+local titleView
+
+-- Creditos
+
+local creditsView
+
+-- Game Background
+
+local gameBg
+
+-- Player
+
+local playerBack
+local playerFront
+local playerLeft
+local playerRight
+
+-- Setas
+
+local up
+local left
+local down
+local right
+
+-- Alert
+
+local alertView
+
+-- Variaveis
+
+local lastY
+local obstacles
+local counter = 0
+
+-- Funções
+
+local Main = {}
+local startButtonListeners = {}
+local showCredits = {}
+local hideCredits = {}
+local showGameView = {}
+local gameListeners = {}
+local addObstacle = {}
+local movePlayer = {}
+local update = {}
+local onCollision = {}
+local alert = {}
+
+-- Main Function
+
+function Main()
+	title = display.newImage('title.png', 64, 130)
+	playBtn = display.newImage('playBtn.png', 134, 245)
+	creditsBtn = display.newImage('creditsBtn.png', 114, 305)
+	titleView = display.newGroup(bg, title, playBtn, creditsBtn)
+
+	startButtonListeners('add')
+end
+
+function startButtonListeners(action)
+	if(action == 'add') then
+		playBtn:addEventListener('tap', showGameView)
+		creditsBtn:addEventListener('tap', showCredits)
+	else
+		playBtn:removeEventListener('tap', showGameView)
+		creditsBtn:removeEventListener('tap', showCredits)
+	end
+end
+
+function showCredits:tap(e)
+	playBtn.isVisible = false
+	creditsBtn.isVisible = false
+	creditsView = display.newImage('credits.png', 0, display.contentHeight)
+
+	lastY = title.y
+	transition.to(title, {time = 300, y = -20})
+	transition.to(creditsView, {time = 300, y = 265, onComplete = function() creditsView:addEventListener('tap', hideCredits) end})
+end
+
+function hideCredits:tap(e)
+	transition.to(creditsView, {time = 300, y = display.contentHeight + 25, onComplete = function() creditsBtn.isVisible = true playBtn.isVisible = true creditsView:removeEventListener('tap', hideCredits) display.remove(creditsView) creditsView = nil end})
+	transition.to(title, {time = 300, y = lastY});
+end
+
+
+function showGameView:tap(e)
+	transition.to(titleView, {time = 300, x = -titleView.height, onComplete = function() startButtonListeners('rmv') display.remove(titleView) titleView = nil end})
+
+	-- Game Background
+
+	gameBg = display.newImage('rua_1.png',0, -40)
+
+	-- Obstaculos
+	
+	obstacles = display.newGroup()
+
+
+	addObstacle(80, 60, 'rock', false, 'l', 'stuff')
+	addObstacle(94, 225, 'rock', false, 'l', 'stuff')
+	addObstacle(274, 225, 'rock', false, 'l', 'stuff')
+	addObstacle(34, 225, 'rock', false, 'l', 'stuff')
+	addObstacle(184, 145, 'rock', false, 'l', 'stuff')
+	addObstacle(4, 60, 'rock', false, 'l', 'stuff')
+
+	addObstacle(4, 10, 'grenede', true, 'r', 'stuff')
+	addObstacle(80, 10, 'grenede', true, 'r', 'stuff')
+	addObstacle(94, 180, 'grenede', true, 'r', 'stuff')
+	addObstacle(34, 265, 'grenede', true, 'r', 'stuff')
+	addObstacle(4, 100, 'grenede', true, 'r', 'stuff')
+
+	--Imagens
+	
+	local policia = display.newImage('policia.png', -10, -40)
+	physics.addBody( policia, "static" )
+
+	local manifestantes = display.newImage('manifestantes.png', 285, -40)
+	physics.addBody( manifestantes, "static")
+
+	local barraIngame = display.newImage('barra_ingame.png', 0, 415)
+	physics.addBody( barraIngame, "static")
+
+
+	--	local rock = display.newImage('rock.png')
+	--	rock.x=350
+	--	rock.y=200
+	--
+	--	local grenede = display.newImage('grenede.png')
+	--	grenede.x=-10
+	--	grenede.y=100
+	--
+	--	function some(self)
+	--	self:removeSelf()
+	--end
+	--
+	--transition.to(rock,{time = 2000, x = 0, onComplete = some})
+	--transition.to(grenede,{time = 2000, x = 360, onComplete = some})
+
+	left = display.newImage('seta_left.png', 0, 440)
+	right = display.newImage('seta_right.png', 55, 440)
+	down = display.newImage('seta_down.png', 250, 470)
+	up = display.newImage('seta_up.png', 250, 415)
+
+	up.name = 'up'
+	down.name = 'down'
+	left.name = 'left'
+	right.name = 'right'
+
+	-- Player
+	
+	playerBack = display.newImage('jogador_back_stop.png', 140, 365)
+	physics.addBody(playerBack, 'dynamic', {radius = 10})
+
+	gameListeners('add')
+end
+
+function gameListeners(action)
+	if(action == 'add') then
+		Runtime:addEventListener('enterFrame', update)
+		up:addEventListener('tap', movePlayer)
+		left:addEventListener('tap', movePlayer)
+		down:addEventListener('tap', movePlayer)
+		right:addEventListener('tap', movePlayer)
+		playerBack:addEventListener('collision', onCollision)
+	else
+		Runtime:removeEventListener('enterFrame', update)
+		up:removeEventListener('tap', movePlayer)
+		left:removeEventListener('tap', movePlayer)
+		down:removeEventListener('tap', movePlayer)
+		right:removeEventListener('tap', movePlayer)
+		playerBack:removeEventListener('collision', onCollision)
+	end
+end
+
+
+function addObstacle(X, Y, graphic, inverted, dir, name)
+	local c = display.newImage(graphic .. '.png', X, Y)
+	c.dir = dir
+	c.name = name
+
+	--Rotate graphic if going right
+
+	if(inverted) then
+		c.xScale = -1
+	end
+
+	-- Física
+
+	physics.addBody(c, 'static')
+	c.isSensor = true
+
+	obstacles:insert(c)
+end
+
+-- Move Player
+
+function movePlayer(e)
+	if(e.target.name == 'up') then
+		playerBack.y = playerBack.y - 31
+	elseif(e.target.name == 'left') then
+		playerBack.x = playerBack.x - 31
+	elseif(e.target.name == 'down') then
+		playerBack.y = playerBack.y + 31
+	elseif(e.target.name == 'right') then
+		playerBack.x = playerBack.x + 31
+	end
+	if (playerBack.x < 0) then
+		playerBack.x = W
+	elseif(playerBack.x > W) then
+		playerBack.x = 0
+	elseif(playerBack.y < -15) then
+		playerBack.y = 375
+	end
+	
+end
+
+--function movePlayer(e)
+--	if(e.target.name == 'up') then
+--		old_x = playerBack.x
+--		old_y = playerBack.y
+--		playerBack:removeSelf()
+--
+--		playerBack = display.newImage('jogador_back_stop.png')
+--		playerBack.x, playerBack.y = old_x, old_y
+--		playerBack.y = playerBack.y - 31
+--	elseif(e.target.name == 'left') then
+--		old_x = playerBack.x
+--		old_y = playerBack.y
+--		playerBack:removeSelf()
+--
+--		playerBack = display.newImage('jogador_left_stop.png')
+--		playerBack.x, playerBack.y = old_x, old_y
+--
+--	    playerBack.x = playerBack.x - 31
+--	elseif(e.target.name == 'down') then
+--		old_x = playerBack.x
+--		old_y = playerBack.y
+--		playerBack:removeSelf()
+--
+--		playerBack = display.newImage('jogador_front_stop.png')
+--		playerBack.x, playerBack.y = old_x, old_y
+--		playerBack.y = playerBack.y + 31
+--	elseif(e.target.name == 'right') then
+--		old_x = playerBack.x
+--		old_y = playerBack.y
+--		playerBack:removeSelf()
+--
+--		playerBack = display.newImage('jogador_right_stop.png')
+--		playerBack.x, playerBack.y = old_x, old_y
+--		playerBack.x = playerBack.x + 31
+--	end
+--	if (playerBack.x < 0) then
+--		playerBack.x = W
+--	elseif(playerBack.x > W) then
+--		playerBack.x = 0
+--	end
+--end
+
+
+function update()
+	-- Move Obstaculos
+
+	for i = 1, obstacles.numChildren do
+		if(obstacles[i].dir == 'l') then
+			obstacles[i].x = obstacles[i].x - 1.5
+	
+		else
+			obstacles[i].x = obstacles[i].x + 1.5
+		end
+
+		-- Carrega os obstaculos quando eles saem do estágio
+		--Direita
+		if(obstacles[i].dir == 'r' and obstacles[i].x > display.contentWidth + (obstacles[i].width * 0.5)) then
+			obstacles[i].x = -(obstacles[i].width * 0.5)
+		end
+
+		-- Carrega os obstaculos quando eles saem do estágio
+		--Esquerda
+		if(obstacles[i].dir == 'l' and obstacles[i].x < -(obstacles[i].width * 0.5)) then
+			obstacles[i].x = display.contentWidth + (obstacles[i].width * 0.5)
+		end
+	end
+end
+
+function onCollision(e)
+	if(e.other.name == 'stuff') then
+		display.remove(e.target)
+		audio.play(loseSnd)
+		alert('lose')
+	elseif(e.other.name == 'goal') then
+		display.remove(e.other)
+		local f = display.newImage('jogador_Back_Stop.png', e.other.x - 12, e.other.y - 18)
+		audio.play(goalSnd)
+		timer.performWithDelay(10, function() jogadorBack.x = 160 jogadorBack.y = 426 end, 1)
+		counter = counter + 1
+	end
+
+	if(counter == 1) then
+		alert()
+	end
+end
+
+function alert(action)
+	gameListeners('rmv')
+	display.remove(obstacles)
+	if(action == 'lose') then
+		alertView = display.newImage('lose.png', 90, 300)
+	else
+		alertView = display.newImage('win.png', 132, 345)
+	end
+
+	transition.from(alertView, {time = 200, alpha = 0.1})
+end
+
+Main()

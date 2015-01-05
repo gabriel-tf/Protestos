@@ -1,0 +1,21 @@
+
+W = display.contentWidth  -- Pega a largura da tela
+H = display.contentHeight -- Pega a altura da tela
+
+-- Imagens
+local bg = display.newImage('rua_1.png')
+
+local policia = display.newImage('policia.png', -10, 0)
+
+local manifestantes = display.newImage('manifestantes.png', 285, 0)
+
+local barraIngame = display.newImage('barra_ingame.png', 0, 370)
+
+local setaLeft = display.newImage('seta_left.png', 0, 395)
+local setaRight = display.newImage('seta_right.png', 55, 395)
+local setaDown = display.newImage('seta_down.png', 250, 425)
+local setaUp = display.newImage('seta_up.png', 250, 370)
+
+local startInggame = display.newImage('start_ingame.png', 123, 440)
+
+local jogadorBack = display.newImage('jogador_back_stop.png', 140, 320)

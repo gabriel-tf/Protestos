@@ -1,0 +1,150 @@
+
+local storyboard = require( "storyboard" )
+local scene = storyboard.newScene()
+
+-- include Corona's "widget" library
+local widget = require "widget"
+
+--------------------------------------------
+
+-- forward declarations and other locals
+--local screenW, screenH, halfW, halfY = display.contentWidth, display.contentHeight, display.contentWidth*0.5, display.contentHeight*0.5
+
+--Tela
+local W = display.contentWidth  -- Pega a largura da tela
+local H = display.contentHeight -- Pega a altura da tela
+local center_x = display.contentCenterX
+local center_y = display.contentCenterY
+
+local loadsave = require("loadsave")
+
+display.setStatusBar(display.HiddenStatusBar)
+
+-- Menu
+
+local title
+local playBtn
+local creditsBtn
+local scoreBtn
+local titleView
+
+-- Creditos
+
+local creditsView
+
+-- Variaveis
+
+local lastY
+local obstacles
+local counter = 0
+
+-- Funções
+
+local Main = {}
+local startButtonListeners = {}
+local showCredits = {}
+local hideCredits = {}
+local showGameScore = {}
+
+-- Called when the scene's view does not exist:
+function scene:createScene( event )
+	local group = self.view
+
+	-- display a background image
+	local bg = display.newImage('bg.png', 0, -45)
+		group:insert(bg)
+	
+	-- place a game title on the screen
+	local gametitle = display.newImage("title.png", 64, 130)		
+		group:insert( gametitle )
+	
+	-- 'onRelease' event listener for playBtn
+	local function onPlayBtnRelease()
+		-- go to level1.lua scene
+		storyboard.gotoScene( "game_3", "fade")	
+		--return true	-- indicates successful touch
+	end
+	
+	local function onScoreBtnRelease()
+		-- go to level1.lua scene
+		storyboard.gotoScene( "scores", "slideRight", "1000")	
+		--return true	-- indicates successful touch
+	end
+	
+	local function onCreditsBtnRelease()
+		-- go to level1.lua scene
+		storyboard.gotoScene( "creditos", "slideLeft", "1000")	
+		--return true	-- indicates successful touch
+	end
+
+	-- create a widget button (which will loads level1.lua on release)
+	playBtn = widget.newButton{	
+		defaultFile = "playBtn.png", 
+    	--overFile = "Button_Purple.png",
+		left=134, top=245,
+		onRelease = onPlayBtnRelease -- event listener function
+	}
+	group:insert(playBtn)
+	
+	scoreBtn = widget.newButton{	
+		defaultFile = "scoreBtn.png", 
+    	--overFile = "Button_Purple.png",
+		left=132, top=309,
+		onRelease = onScoreBtnRelease -- event listener function
+	}	
+	group:insert(scoreBtn)
+	
+	creditsBtn = widget.newButton{	
+		defaultFile = "creditsBtn.png", 
+    	--overFile = "Button_Purple.png",
+		left=114, top=365,
+		onRelease = onCreditsBtnRelease -- event listener function
+	}	
+	group:insert(creditsBtn)
+	
+end
+
+-- Called immediately after scene has moved onscreen:
+function scene:enterScene( event )
+	local group = self.view
+	
+	if storyboard.getPrevious() ~= nil then
+		storyboard.removeScene(storyboard.getPrevious())
+	end
+	
+end
+
+-- If scene's view is removed, scene:destroyScene() will be called just prior to:
+function scene:destroyScene( event )
+	local group = self.view
+	
+	if playBtn then
+		playBtn:removeSelf()	-- widgets must be manually removed
+		playBtn = nil
+	elseif scoreBtn then
+		scoreBtn:removeSelf()	-- widgets must be manually removed
+		scoreBtn = nil
+	elseif creditsBtn then
+		creditsBtn:removeSelf()	-- widgets must be manually removed
+		creditsBtn = nil
+	end
+end
+
+-----------------------------------------------------------------------------------------
+-- END OF YOUR IMPLEMENTATION
+-----------------------------------------------------------------------------------------
+
+-- "createScene" event is dispatched if scene's view does not exist
+scene:addEventListener( "createScene", scene )
+
+-- "enterScene" event is dispatched whenever scene transition has finished
+scene:addEventListener( "enterScene", scene )
+
+-- "destroyScene" event is dispatched before view is unloaded, which can be
+-- automatically unloaded in low memory situations, or explicitly via a call to
+-- storyboard.purgeScene() or storyboard.removeScene().
+scene:addEventListener( "destroyScene", scene )
+
+-----------------------------------------------------------------------------------------
+
+return scene
